@@ -1,0 +1,289 @@
+<!--
+// Copyright August 2020 Maxset Worldwide Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+-->
+<template>
+  <!-- prompt Login -->
+
+  <!-- No files exist -->
+  <div v-if="promptUpload && !loading" class="no-files-added">
+    <div>
+      <b-img class="braries-logo" src="@/assets/braries-logo-alternate.png" />
+      <div>
+        <p>
+          A personal digital <span>Web-Brarian</span>, or web app that allows
+          you to <span>upload</span>, instantly <span>search</span>, and securely <span>share</span> your
+          DOCs, PDF, Text, Screenshots of written informata and more.
+        </p>
+        <b-button variant="outline-secondary" v-b-modal="'file-list-upload'">
+          Click here to add a new file
+        </b-button>
+      </div>
+    </div>
+    <upload-modal id="file-list-upload" />
+  </div>
+
+  <div v-else class="overflow-auto">
+    <!--
+       - <p v-if="activeFolders.length > 0">
+       -   Open Folders:
+       -   <span v-for="fold in activeFolders" :key="fold"
+       -     >{{ fold }}
+       -     <span @click="closeFolder(fold)" class="removeFolder">X</span>
+       -   </span>
+       - </p>
+       -->
+    <file-table
+      :files="files"
+      :busy="loading"
+      :trashmode="src === 'trash'"
+      @selection="onCheck"
+      @open="open"
+    ></file-table>
+    <hr>
+  </div>
+</template>
+
+<script>
+import UploadModal from '@/components/modals/upload-modal'
+import FileTable from '@/components/file-table'
+import { LOAD_FOLDERS, GET_USER } from '@/store/actions.type'
+import { SET_ACTIVE_FILES, SET_SELECTED_FILES } from '@/store/mutations.type'
+import { mapGetters, mapMutations } from 'vuex'
+
+export default {
+  name: 'file-list',
+  components: {
+    UploadModal,
+    FileTable
+  },
+  props: {
+    src: String
+  },
+  created () {
+    // EventBus.$on(['file-upload', 'url-upload'], this.refresh)
+    // this.refresh()
+  },
+  computed: {
+    files () {
+      let trashFolder = this.folders['_trash_'] || []
+      function filterTrash (ids) {
+        return ids.filter(id => {
+          return trashFolder.reduce((a, i) => {
+            return a && i !== id
+          }, true)
+        })
+      }
+      if (this.src === 'recents') {
+        return filterTrash(this.recentFiles || [])
+      } else if (!this.activeGroup && this.src === 'favorites') {
+        return filterTrash(this.folders['_favorites_'] || [])
+      } else if (!this.activeGroup && this.src === 'shared') {
+        return filterTrash(this.sharedFiles)
+      } else if (!this.activeGroup && this.src === 'owned') {
+        return filterTrash(this.ownedFiles)
+      } else if (!this.activeGroup && this.src === 'trash') {
+        return trashFolder
+      }
+      // console.log(this.ownedFiles)
+      // console.log(this.sharedFiles)
+      return filterTrash([...this.ownedFiles, ...this.sharedFiles])
+    },
+    /*
+     * fileids () {
+     *   return this.files.filter(id => {
+     *     return this.activeFolders.reduce((acc, name) => {
+     *       return acc && this.folders[name].indexOf(id) > -1
+     *     }, true)
+     *   })
+     * },
+     */
+    /*
+     * folderRows () {
+     *   let rows = []
+     *   for (let name in this.folders) {
+     *     if (
+     *       name !== '_favorites_' &&
+     *       name !== '_trash_' &&
+     *       this.activeFolders.reduce((acc, active) => {
+     *         return acc && active !== name
+     *       }, true)
+     *     ) {
+     *       rows.push(name)
+     *     }
+     *   }
+     *   return rows
+     * },
+     */
+    promptUpload () {
+      if (this.src || this.activeGroup || this.loading) {
+        return false
+      }
+      return this.files.length === 0
+    },
+    ...mapGetters([
+      'isAuthenticated',
+      'ownedFiles',
+      'sharedFiles',
+      'recentFiles',
+      'folders',
+      // 'activeFolders',
+      'activeGroup',
+      'loading',
+      'populateFiles'
+    ])
+  },
+  methods: {
+    onCheck (rows) {
+      this.saveSelectedFiles(rows)
+    },
+    open (id) {
+      this.onCheck([])
+      this.$router.push(`/file/${id}`)
+    },
+    ...mapMutations({
+      currentFiles: SET_ACTIVE_FILES,
+      saveSelectedFiles: SET_SELECTED_FILES
+    })
+  },
+  watch: {
+    gid (n, o) {
+      if (n !== o) {
+        this.refresh()
+      }
+    },
+    files (n) {
+      this.currentFiles(n)
+    }
+  },
+  mounted () {
+    this.$store.dispatch(GET_USER, {})
+    this.$store.dispatch(LOAD_FOLDERS, {})
+  }
+}
+</script>
+
+<style lang="scss" scoped>
+.divide {
+  margin-top: 2px;
+  margin-bottom: 2px;
+  height: 1px;
+  width: 100%;
+  border-top: 1px solid gray;
+}
+
+.head-row {
+  margin-top: 10px;
+}
+
+// .empty {
+//   text-align: center;
+//   max-width: 550px;
+//   margin: 7% auto 0 auto;
+
+//   // button {
+//   //   background-color: white;
+//   //   border-radius: 10px;
+//   //   border: 0px;
+//   //   // width: 260px;
+//   //   // height: 80px;
+//   //   color: rgb(46, 46, 46);
+//   // }
+
+//   // button:hover {
+//   //   background-color: rgb(150, 182, 252);
+//   //   color: rgb(46, 46, 46);
+//   // }
+
+//   img {
+//     opacity: 0.4;
+//   }
+// }
+
+.no-files-added {
+  text-align: center;
+  max-width: 550px;
+  margin: 8% auto 0;
+  img {
+    opacity: 0.4;
+  }
+  p {
+    font-size: 15px;
+    color: #444;
+  }
+  span {
+    color: #3498ed;
+    font-weight: 600;
+  }
+
+  button {
+    background-color: white;
+    border-radius: 3px;
+    border: 1px solid rgb(184, 184, 184);
+    color: rgb(46, 46, 46);
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+
+  button:hover {
+    background-color: rgb(150, 182, 252);
+    color: rgb(46, 46, 46);
+  }
+
+}
+
+.file-name {
+  cursor: pointer;
+  color: $app-clr1;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+svg {
+  width: 100%;
+  height: 40px;
+}
+
+.format-column {
+  width: 5%;
+}
+
+.name-column {
+  min-width: 30%;
+}
+
+.expand-column {
+  width: 8%;
+}
+
+.triangle {
+  fill: gray;
+
+  &:hover {
+    fill: $app-bg4;
+  }
+}
+/*
+ *
+ * .removeFolder {
+ *   color: red;
+ * }
+ *
+ * .removeFolder:hover {
+ *   text-decoration: underline;
+ *   cursor: pointer;
+ * }
+ */
+</style>

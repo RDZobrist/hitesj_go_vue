@@ -1,0 +1,246 @@
+<!--
+// Copyright August 2020 Maxset Worldwide Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+-->
+<!--
+text-viewer: a file viewer for reading the plain text version of a record
+
+this component should be instantiated via the router, with the file ID as a
+parameter
+
+future work:
+  Add watcher for route change if we will have linking between documents
+    This is due to vue reusing the same component instance
+    https://router.vuejs.org/guide/essentials/dynamic-matching.html#reacting-to-params-changes
+-->
+
+<template>
+  <div>
+    <b-container fluid class="header mb-3">
+      <b-row align-h="between" align-v="center">
+        <b-col cols="3">
+          <b-row>
+            <b-col>
+              <b-button
+                @click="decrementPage"
+                :disabled="loading"
+                pill
+                class="shadow-sm min-width-1em mb-2"
+              >
+                <b-icon icon="arrow-bar-left" class="icon" />
+              </b-button>
+            </b-col>
+            <b-col>
+              <b-button
+                @click="incrementPage"
+                :disabled="loading"
+                pill
+                class="shadow-sm min-width-1em"
+              >
+                <b-icon icon="arrow-bar-right" class="icon" />
+              </b-button>
+            </b-col>
+          </b-row>
+        </b-col>
+
+        <b-col class="title" cols="5">
+          <strong>
+            {{ fileName }}
+          </strong>
+        </b-col>
+
+        <b-col cols="3">
+          <b-row>
+            <b-col>
+              <b-button
+                @click="decreasePageSize"
+                :disabled="loading"
+                pill
+                class="shadow-sm min-width-1em zoom-button mb-2"
+              >
+                <svg>
+                  <use href="@/assets/app.svg#zoom-out"></use>
+                </svg>
+              </b-button>
+            </b-col>
+            <b-col>
+              <b-button
+                @click="increasePageSize"
+                :disabled="loading"
+                pill
+                class="shadow-sm min-width-1em zoom-button"
+              >
+                <svg>
+                  <use href="@/assets/app.svg#zoom-in"></use>
+                </svg>
+              </b-button>
+            </b-col>
+          </b-row>
+        </b-col>
+      </b-row>
+    </b-container>
+    <div class="divide"/>
+    <div class="content" v-if="!loading">
+      <div v-for="line in slice.lines" :key="line.Position" >
+        <div :class="(line.Position % 2 == 0) ? 'even' : 'odd'">
+          {{ line.Position + ':' + line.Content.toString() }}
+        </div>
+      </div>
+    </div>
+    <div class="loading" v-else>
+      <b-spinner/>
+    </div>
+  </div>
+</template>
+
+<script>
+import FileService from '@/service/file'
+
+export default {
+  name: 'text-viewer',
+  props: {
+    fileName: String,
+    finalPage: Number,
+    acr: String
+  },
+  data () {
+    return {
+      slice: {},
+      fileID: '',
+      pageSize: 0,
+      pageSizeIncrement: 5,
+      startPosition: 0
+    }
+  },
+  computed: {
+    endPosition () {
+      return this.startPosition + this.pageSize
+    },
+    loading () {
+      return this.$store.state.file.isLoading
+    }
+  },
+  methods: {
+    fetchSlice () {
+      FileService.slice({
+        fid: this.fileID,
+        start: this.startPosition,
+        end: this.endPosition
+      }).then(({ data }) => {
+        this.slice = data
+      })
+    },
+    decreasePageSize () {
+      this.pageSize = Math.max(1, this.pageSize - this.pageSizeIncrement)
+      this.fetchSlice()
+    },
+    increasePageSize () {
+      this.pageSize += this.pageSizeIncrement
+      if (this.endPosition > this.finalPage) {
+        this.startPosition = this.finalPage - this.pageSize
+        if (this.startPosition < 0) {
+          this.startPosition = 0
+          this.pageSize = this.finalPage
+        }
+      }
+      this.fetchSlice()
+    },
+    incrementPage () {
+      this.startPosition += this.pageSize
+      if (this.endPosition > this.finalPage) {
+        this.startPosition = this.finalPage - this.pageSize
+      }
+      this.fetchSlice()
+    },
+    decrementPage () {
+      this.startPosition = Math.max(0, this.startPosition - this.pageSize)
+      this.fetchSlice()
+    }
+  },
+  created () {
+    this.fileID = this.$route.params.id
+    this.pageSize = Math.min(10, this.finalPage)
+    this.fetchSlice()
+  },
+  watch: {
+    finalPage () {
+      this.pageSize = Math.min(10, this.finalPage)
+      this.fetchSlice()
+    }
+  }
+}
+</script>
+
+<style scoped lang="scss">
+
+.header {
+  margin-bottom: 5px;
+
+  .title {
+    text-align: center;
+    margin-top: auto;
+    margin-bottom: auto;
+    overflow-wrap: break-word
+  }
+  button {
+    max-width: 80px;
+    min-width: 55px;
+    @extend %buttons-border;
+  }
+}
+
+.divide {
+  margin-top: 2px;
+  margin-bottom: 20px;
+  height: 1px;
+  width: 100%;
+  border-top: 1px solid gray;
+}
+
+.content {
+  margin-left: 20px;
+  margin-right: 20px;
+
+  .even {
+    background-color: $app-bg1;
+  }
+
+  .odd {
+    background-color: $app-bg;
+  }
+}
+
+button {
+  width: 100%;
+  color: rgb(46, 46, 46);
+  background-color: white;
+}
+
+.loading {
+  margin-top: auto;
+  margin-bottom: auto;
+  text-align: center;
+}
+.zoom-button {
+  svg {
+    width: 1.1em;
+    height: 1.1em;
+  }
+  &:hover {
+    svg {
+      fill: white
+    }
+  }
+}
+</style>

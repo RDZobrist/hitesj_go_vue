@@ -1,0 +1,73 @@
+version: '3'
+services:
+  server:
+    build:
+      context: ./backend
+    restart: "unless-stopped"
+    expose:
+      - "80"
+    volumes:
+    # These are static files located on the host machine.
+      - web:/srv
+    depends_on:
+      - mongo
+      - tika
+      - gotenberg
+    networks:
+      - app-plane
+    environment:
+# Chang this value to 'restart' if you want to clean up database on start of the 'server' service           
+      - KNAXIMINIT=resume
+  mongo:
+    image: mongo:latest
+    restart: "unless-stopped"
+    expose:
+      - "27017"
+    networks:
+      - app-plane
+    volumes:
+      - mongo:/data/db
+      - mongo-cfg:/data/configdb
+  tika:
+    image: lexpredict/tika-server:latest
+    restart: "unless-stopped"
+    # Warning !!! port is mapped to host for Testing only!
+    expose:
+      - "9998"
+    networks:
+      - app-plane
+  gotenberg:
+    # May need to scale: https://thecodingmachine.github.io/gotenberg/#scalability.strategies.scaling
+    image: thecodingmachine/gotenberg:latest # Should version be latest or 6?
+    restart: "unless-stopped"
+    expose:
+      - "3000"
+    networks:
+      - app-plane
+    environment:
+      - DEFAULT_WAIT_TIMEOUT=240
+      - MAXIMUM_WAIT_TIMEOUT=240
+  frontend:
+    restart: on-failure:5
+    ports:
+      - "8080:8080"
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    env_file: .env.dev
+    volumes:
+      - ./frontend:/app
+      - nodemodules:/app/node_modules
+    depends_on:
+      - server
+    networks:
+      - app-plane 
+
+volumes:
+  web:
+  mongo:
+  mongo-cfg:
+  nodemodules:
+  
+networks:
+  app-plane:

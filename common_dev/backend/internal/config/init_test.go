@@ -1,0 +1,59 @@
+// Copyright August 2020 Maxset Worldwide Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package config
+
+import (
+	"io/ioutil"
+	"os"
+	"testing"
+)
+
+func TestLoadingConfig(t *testing.T) {
+	tmpfile, err := ioutil.TempFile("", "testconfig*.json")
+	if err != nil {
+		t.Fatal("unable to make temporary file ", err.Error())
+	}
+	defer os.Remove(tmpfile.Name())
+
+	if _, err := tmpfile.Write(testconfigjson); err != nil {
+		t.Fatal(err)
+	}
+	if err := tmpfile.Close(); err != nil {
+		t.Fatal(err)
+	}
+	if err := ParseConfig(tmpfile.Name()); err != nil {
+		t.Log(tmpfile.Name())
+		t.Fatal(err)
+	}
+}
+
+func TestLoadingYAML(t *testing.T) {
+	tmpfile, err := ioutil.TempFile("", "testconfig*.yml")
+	if err != nil {
+		t.Fatal("unable to make temporary file ", err.Error())
+	}
+	//defer os.Remove(tmpfile.Name())
+
+	if _, err := tmpfile.Write(testconfigyaml); err != nil {
+		t.Fatal(err)
+	}
+	if err := tmpfile.Close(); err != nil {
+		t.Fatal(err)
+	}
+	if err := ParseConfig(tmpfile.Name()); err != nil {
+		t.Log(tmpfile.Name())
+		t.Fatal(err)
+	}
+}

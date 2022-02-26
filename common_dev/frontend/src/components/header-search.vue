@@ -1,0 +1,171 @@
+<!--
+// Copyright August 2020 Maxset Worldwide Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+-->
+<template>
+ <b-navbar-nav class="header-search flex-grow-1 ml-auto">
+  <!-- Search Bar -->
+  <!-- TODO: Should the find search bar be updated when a search history is
+    clicked?  Then, Fix circular refernce issue bewteen state, and model.
+    for the find parameter.
+  -->
+  <!-- Hide the list after enter is pressed but, only
+    after the search is initiated. -->
+
+  <b-input-group size="md" class="mr-2 shadow-md">
+    <b-form-input ref="search" placeholder="One word finds the answers" size="md"
+      v-model="find"
+      @focus="onFocus"
+      @blur="showList = !showList"
+      @keydown.enter="search"
+      @keyup.enter="$refs.search.blur"
+    ></b-form-input>
+    <b-input-group-append is-text class="cursor-pointer" @click="search">
+      <b-icon icon="search"></b-icon>
+    </b-input-group-append>
+  </b-input-group>
+
+  <div class="custom-dropdown w-100" v-if="showList">
+    <b-list-group flush>
+      <acronym-search ref="acronym" :phrase="find" #default="{ result }">
+        <!-- mousedown happens Before the blur event! -->
+        <b-list-group-item button class="w-100"
+            v-for="(item, index) in result.slice(0, 6)"
+            :key="index"
+            :value="item"
+            @mousedown="searchWithAcronym(item)"
+        > {{ item }} </b-list-group-item>
+
+        <!-- Divider -->
+        <b-list-group-item v-if="dropDown.length">
+          <hr class="w-100">
+        </b-list-group-item>
+      </acronym-search>
+
+      <!-- TODO: remove getter param in getSearch, just mapState history. -->
+      <!-- Search History Items  -->
+      <b-list-group-item button class="w-100"
+          v-for="item in dropDown"
+          :key="item"
+          :value="item"
+          @mousedown="search(item)"
+      > {{ item }} </b-list-group-item>
+    </b-list-group>
+  </div>
+ </b-navbar-nav>
+</template>
+
+<script>
+import { mapGetters } from 'vuex'
+import AcronymSearch from '@/components/acronym-search'
+
+export default {
+  name: 'header-search',
+  components: {
+    AcronymSearch
+  },
+  data () {
+    return {
+      find: '',
+      showList: false
+    }
+  },
+
+  computed: {
+    dropDown () {
+      return this.searchHistory.slice(0, 6)
+    },
+    ...mapGetters([
+      'searchHistory'
+    ])
+  },
+
+  methods: {
+    onFocus () {
+      this.showList = !this.showList
+      // acronym ref is not available until afer it is visible
+      this.$nextTick(() => {
+        this.$refs.acronym.search({ acronym: this.find })
+      })
+    },
+    searchWithAcronym (item) {
+      let ac = this.find
+      if (typeof item === 'string' && item.length > 0) {
+        this.find = item
+      }
+      if (this.find) {
+        this.$router.push(({ path: `/search/${this.find}/acronym/${ac}` }))
+      }
+    },
+    search (item) {
+      // Load search view
+      if (typeof item === 'string' && item.length > 0) {
+        this.find = item
+      }
+      if (this.find) {
+        this.$router.push(({ path: `/search/${this.find}` }))
+      }
+    }
+  }
+}
+</script>
+
+<style lang="scss">
+.header-search {
+  position: relative;
+
+  // Search container and field.
+  button:first-child {
+    background-color: white;
+  }
+  .dropdown-item {
+    &.active {
+      background-color: $app-bg2;
+    }
+  }
+  .custom-dropdown {
+    position: absolute;
+    top: 43px;
+    z-index: 15;
+  }
+
+  // Secondary button.
+  .dropdown {
+    .search--btn {
+      // @include app-nav-kit;
+      :hover {
+        @extend %app-nav-color;
+      }
+    }
+    .btn-secondary {
+      border: none;
+      background-color: none;
+    }
+    .dropdown-menu {
+      width: 100%;
+    }
+  }
+}
+// .input-group-prepend > .input-group-text {
+//   background-color: #fff;
+//   border-right: none !important;
+// }
+// .input-group-prepend + input.form-control {
+//   border-left: none !important;
+// }
+// .input-group-prepend + input.form-control:focus {
+//   outline: none;
+// }
+
+</style>

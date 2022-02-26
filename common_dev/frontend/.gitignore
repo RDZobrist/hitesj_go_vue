@@ -1,0 +1,14 @@
+.DS_Store
+node_modules
+*.swp
+local
+web/test/local/
+
+dist/
+build/
+
+sub_modules
+
+.editorconfig
+
+yarn.lock
