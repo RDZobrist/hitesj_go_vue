@@ -1,5 +1,5 @@
 {
-	"address": "localhost",
+	"address": "localhost:8080",
 	"static": "/srv",
 	"index": "/index.html",
 	"server":{
@@ -43,12 +43,12 @@
     "Total": "24h"
   },
 	"Email": {
-		"from": "noreply@cloudedison.com",
-		"server": "sub5.mail.dreamhost.com:587",
+		"from": "trybrarys@brarys.com",
+		"server": "smtp.ionos.com:587",
 		"cred": {
-			"Username": "server@cloudedison.com",
-			"Password": "ebrv8tk3",
-			"Host": "sub5.mail.dreamhost.com"
+			"Username": "trybrarys@brarys.com",
+			"Password": "CcnianL7sLetsgo202276uDTW",
+			"Host": "smtp.ionos.com"
 		}
 	},
 	"error_email": "",
