@@ -107,6 +107,7 @@ type Configuration struct {
 	FileLimit            int64  `json:"filelimit" yaml:"filelimit"`
 	FreeSpace            int    `json:"total_free_space" yaml:"total_free_space"`
 	MaxFileCount         int64  `json:"maxfilecount" yaml:"maxfilecount"`
+	AdminEmail           string
 	AdminKey             string
 	GuestUser            *Guest
 	SetupTimeout         Duration

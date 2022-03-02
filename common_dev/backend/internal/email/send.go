@@ -29,7 +29,7 @@ func sendEmail(to []string, msg []byte) error {
 
 var resetEmail = strings.ReplaceAll(`To: %s
 From: %s
-Subject: CloudEdison Reset Password
+Subject: Braries.com - Reset Password
 MIME-version: 1.0
 Content-Type: text/plain; charset=\"UTF-8\"
 
@@ -37,7 +37,7 @@ A request for a password reset has been recieved for your account named %s. Foll
 
 https://%s/reset/%s
 
-CloudEdison Team
+Braries.com Team
 `, "\n", "\r\n")
 
 // SendResetEmail sends an email with a reset link
@@ -50,13 +50,36 @@ func SendResetEmail(to []string, name, address, resetkey string) error {
 	return sendEmail(to, []byte(msgstr))
 }
 
+var resetSuccessEmail = strings.ReplaceAll(`To: %s
+From: %s
+Subject: Braries.com Reset Password Successfull
+MIME-version: 1.0
+Content-Type: text/plain; charset=\"UTF-8\"
+
+password reset successfully.
+
+User Details
+Name: %s
+Email: %s
+Space: %d
+Roles: %s
+
+Braries.com Team
+`, "\n", "\r\n")
+
+func SendResetSuccessEmail(name string, email string, space int64, roles []string) error {
+	to := []string{config.V.AdminEmail}
+	msgstr := fmt.Sprintf(resetSuccessEmail, strings.Join(to, ", "), config.V.Email.From, name, email, space, strings.Join(roles, ", "))
+	return sendEmail(to, []byte(msgstr))
+}
+
 var errorEmail = strings.ReplaceAll(`To: %s
 From: %s
 Subject: Automated Error Report
 MIME-version: 1.0
 Content-Type: text/plain; charset=\"UTF-8\"
 
-This is an automated email from the CloudEdison server regarding the occurrence of a server error.
+This is an automated email from the Braries.com server regarding the occurrence of a server error.
 
 %s
 `, "\n", "\r\n")

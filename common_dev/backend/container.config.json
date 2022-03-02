@@ -32,6 +32,7 @@
 	"gotenpath": "http://gotenberg:3000",
 	"total_free_space": 53687091200,
 	"AdminKey": "b9!5v789DEp$5Yqw@9h",
+	"AdminEmail": "info@braries.com",
 	"GuestUser": {
 		"Name": "Guest",
 		"Pass": "guestpass",

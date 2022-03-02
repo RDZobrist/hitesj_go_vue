@@ -116,6 +116,10 @@ func updateCredentialsReset(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		panic(err)
 	}
+	err = email.SendResetSuccessEmail(user.GetName(), user.GetEmail(), user.GetTotalSpace())
+	if err != nil {
+		panic(srverror.New(err, 500, "Error H4", "unable to send reset password notification [to admin]"))
+	}
 	w.Write([]byte("password updated"))
 }
 
