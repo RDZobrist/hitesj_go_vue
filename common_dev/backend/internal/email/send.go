@@ -73,6 +73,28 @@ func SendResetSuccessEmail(name string, email string, space int64, roles []strin
 	return sendEmail(to, []byte(msgstr))
 }
 
+var newAccountEmail = strings.ReplaceAll(`To: %s
+From: %s
+Subject: Braries.com New Account Created
+MIME-version: 1.0
+Content-Type: text/plain; charset=\"UTF-8\"
+
+New account created
+
+User Details
+Name: %s
+Email: %s
+
+
+Braries.com Team
+`, "\n", "\r\n")
+
+func NewAccountCreatedEmail(name string, email string) error {
+	to := []string{config.V.AdminEmail}
+	msgstr := fmt.Sprintf(resetSuccessEmail, strings.Join(to, ", "), config.V.Email.From, name, email)
+	return sendEmail(to, []byte(msgstr))
+}
+
 var errorEmail = strings.ReplaceAll(`To: %s
 From: %s
 Subject: Automated Error Report
